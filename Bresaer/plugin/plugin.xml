@@ -2,8 +2,14 @@
 <PluginDescriptor>
 	<JavaPlugin>
 		<interfaceClass>org.bimserver.plugins.services.ServicePlugin</interfaceClass>
-		<implementationClass>org.bimserver.demoplugins.bresaer.BimBotBresaerService</implementationClass>
+		<implementationClass>org.bimserver.bresaer.BimBotBresaerService</implementationClass>
 		<description>Bresaer Bim Bot service</description>
 		<name>BresaerBimBotService</name>
+	</JavaPlugin>	
+	<JavaPlugin>
+		<interfaceClass>org.bimserver.plugins.services.ServicePlugin</interfaceClass>
+		<implementationClass>org.bimserver.bresaer.VisualizeIssuesService</implementationClass>
+		<description>Bresaer colorize issues service</description>
+		<name>BresaerColorizeIssuesService</name>
 	</JavaPlugin>	
 </PluginDescriptor>

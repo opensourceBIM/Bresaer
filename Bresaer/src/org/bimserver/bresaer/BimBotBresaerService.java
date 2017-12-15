@@ -1,7 +1,6 @@
 package org.bimserver.bresaer;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -60,6 +59,9 @@ public class BimBotBresaerService extends BimBotAbstractService {
 						
 			//create a listing of the panels based on each corner => a list contains neighbouring panel
 			Panel curPanel = new Panel(ifcProxy);
+			if (curPanel.normalAxis == -1)
+				continue;
+			
 			switch (curPanel.type) {
 			case ULMA: 
 				nrOfUlmaPanels.put(curPanel.size, nrOfUlmaPanels.containsKey(curPanel.size) ? nrOfUlmaPanels.get(curPanel.size) + 1 : 1);
@@ -450,6 +452,11 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			sb.append("\n");
 		}
 		
+		sb.append("Flowsheets can be found at:\n");
+		sb.append("http://www.modelservers.org/public/projects/Bresaer\n");
+		sb.append("\n");
+		
+		/*
 		sb.append("Panels (partly) covering an opening\n");
 		sb.append("-------------------------------------------\n");
 		//loop through all panelsets for the different planes
@@ -464,7 +471,7 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			if (panel.coversOpening)
 				sb.append(panel.id + " " + panel.type.name() + "\n");
 		}
-		
+		*/
 //		sb.append("Panel details\n");
 //		sb.append("-------------------------------------------\n");
 //		sb.append(strbld.toString());
@@ -473,6 +480,42 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		return sb.toString();		
 	}
 
+	
+	public String GenerateColoredJSON() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{\n");
+		sb.append("  \"name\": \"Bresaer elements with issues\"\n");
+		sb.append("	 \"changes\": [\n");
+		sb.append("    {\n");
+		sb.append("      \"selector\": {\n");
+		sb.append("        \"guids\": [\n");
+		for (HashSet<Panel> panels : panelsByPlane.values()) {
+			for (Panel panel : panels) {
+				if (panel.coversOpening)
+					sb.append("\"" + panel.id + "\"\n");
+			}
+		}	
+		for (Panel panel : eurecatPanels) {
+			if (panel.coversOpening)
+				sb.append("\"" + panel.id + "\"\n");
+		}		
+		sb.append("        ]\n");
+		sb.append("      },\n");
+		sb.append("      \"effect\": {\n");
+		sb.append("        \"color\": {\n");
+		sb.append("          \"r\": 1,\n");
+		sb.append("          \"g\": 0,\n");
+		sb.append("          \"b\": 0,\n");
+		sb.append("          \"a\": 1\n");
+		sb.append("        }\n");
+		sb.append("      }\n");
+		sb.append("    }\n");
+		sb.append("  ]\n");
+		sb.append("}\n");
+
+		return sb.toString();
+	}
+	
 	
 	@Override
 	public BimBotsOutput runBimBot(BimBotsInput input, SObjectType settings) throws BimBotsException {
@@ -494,8 +537,8 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		String outputString = WritePartsAndIssues();
 	
 		BimBotsOutput output = new BimBotsOutput(SchemaName.UNSTRUCTURED_UTF8_TEXT_1_0, outputString.getBytes(Charsets.UTF_8));
-		output.setTitle("Materials used for Bresaer envelope");
-		output.setContentType("text/plain");		
+		output.setTitle("Bresaer bimbot output");
+		output.setContentType("text/plain");	
 		return output;
 	}
 	
