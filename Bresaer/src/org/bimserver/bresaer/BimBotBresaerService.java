@@ -516,7 +516,7 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		sb.append("http://www.modelservers.org/public/projects/Bresaer\n");
 		sb.append("\n");
 		
-		/*
+		
 		sb.append("Panels (partly) covering an opening\n");
 		sb.append("-------------------------------------------\n");
 		//loop through all panelsets for the different planes
@@ -531,7 +531,7 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			if (panel.coversOpening)
 				sb.append(panel.id + " " + panel.type.name() + "\n");
 		}
-		*/
+		
 //		sb.append("Panel details\n");
 //		sb.append("-------------------------------------------\n");
 //		sb.append(strbld.toString());
