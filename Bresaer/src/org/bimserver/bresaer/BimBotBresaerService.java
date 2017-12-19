@@ -27,10 +27,18 @@ public class BimBotBresaerService extends BimBotAbstractService {
 	private HashMap<Plane, HashSet<Panel>>     panelsByPlane  = new HashMap<Plane, HashSet<Panel>>();
 	private HashSet<Panel>                     eurecatPanels  = new HashSet<Panel>();
 	private HashMap<PanelSize, Integer> nrOfUlmaPanels = new HashMap<PanelSize, Integer>();		
+	private HashMap<PanelSize, Integer> nrOfUlmaPVPanels = new HashMap<PanelSize, Integer>();		
 	private HashMap<PanelSize, Integer> nrOfStamPanels = new HashMap<PanelSize, Integer>();
+	private HashMap<PanelSize, Integer> nrOfStamPVPanels = new HashMap<PanelSize, Integer>();
 	private HashMap<PanelSize, Integer> nrOfSolarPanels = new HashMap<PanelSize, Integer>();	
+	private HashMap<PanelSize, Integer> nrOfSolarPVPanels = new HashMap<PanelSize, Integer>();	
 	private HashMap<PanelSize, Integer> nrOfEurecatPanels = new HashMap<PanelSize, Integer>();	
 	private HashMap<PanelSize, Integer> nrOfUnknownPanels = new HashMap<PanelSize, Integer>();	
+	
+	private double UlmaCost;
+	private double StamCost;
+	private double SolarwallCost;
+	private double EurecatCost;
 	private StringBuilder strbld = new StringBuilder();
 	
 	
@@ -64,19 +72,32 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			
 			switch (curPanel.type) {
 			case ULMA: 
-				nrOfUlmaPanels.put(curPanel.size, nrOfUlmaPanels.containsKey(curPanel.size) ? nrOfUlmaPanels.get(curPanel.size) + 1 : 1);
+				if (curPanel.hasPV)
+					nrOfUlmaPVPanels.put(curPanel.size, nrOfUlmaPVPanels.containsKey(curPanel.size) ? nrOfUlmaPVPanels.get(curPanel.size) + 1 : 1);
+				else
+					nrOfUlmaPanels.put(curPanel.size, nrOfUlmaPanels.containsKey(curPanel.size) ? nrOfUlmaPanels.get(curPanel.size) + 1 : 1);
+				UlmaCost += curPanel.GetArea() * curPanel.cost; 
 				break;
 			case STAM: 
-				nrOfStamPanels.put(curPanel.size, nrOfStamPanels.containsKey(curPanel.size) ? nrOfStamPanels.get(curPanel.size) + 1 : 1);
+				if (curPanel.hasPV)
+					nrOfStamPVPanels.put(curPanel.size, nrOfStamPVPanels.containsKey(curPanel.size) ? nrOfStamPVPanels.get(curPanel.size) + 1 : 1);
+				else
+					nrOfStamPanels.put(curPanel.size, nrOfStamPanels.containsKey(curPanel.size) ? nrOfStamPanels.get(curPanel.size) + 1 : 1);
+				StamCost += curPanel.GetArea() * curPanel.cost; 
 				break;
 			case SOLARWALL: 
-				nrOfSolarPanels.put(curPanel.size, nrOfSolarPanels.containsKey(curPanel.size) ? nrOfSolarPanels.get(curPanel.size) + 1 : 1);
+				if (curPanel.hasPV)
+					nrOfSolarPVPanels.put(curPanel.size, nrOfSolarPVPanels.containsKey(curPanel.size) ? nrOfSolarPVPanels.get(curPanel.size) + 1 : 1);
+				else
+					nrOfSolarPanels.put(curPanel.size, nrOfSolarPanels.containsKey(curPanel.size) ? nrOfSolarPanels.get(curPanel.size) + 1 : 1);
+				SolarwallCost += curPanel.GetArea() * curPanel.cost; 
 				break;
 			case EURECAT: 
 				nrOfEurecatPanels.put(curPanel.size, nrOfEurecatPanels.containsKey(curPanel.size) ? nrOfEurecatPanels.get(curPanel.size) + 1 : 1);
+				EurecatCost += curPanel.GetArea() * curPanel.cost; 
 				break;
 			default:
-				nrOfUnknownPanels.put(curPanel.size, nrOfUlmaPanels.containsKey(curPanel.size) ? nrOfUlmaPanels.get(curPanel.size) + 1 : 1);
+				nrOfUnknownPanels.put(curPanel.size, nrOfUnknownPanels.containsKey(curPanel.size) ? nrOfUnknownPanels.get(curPanel.size) + 1 : 1);
 			}			
 			
 			if (curPanel.type == PanelType.EURECAT) {
@@ -108,11 +129,12 @@ public class BimBotBresaerService extends BimBotAbstractService {
 				panelsByPosition = panelsByPlaneAndPosition.get(plane);			
 			
 			boolean first = true;
-			for (int i = 0; i < 2; i++)	{
+			for (int i = 0; i < 3; i++)	{
 				if (i != curPanel.normalAxis) {
 					if (first)	{
 						coor[0].v[i] = curPanel.min.v[i];
 						coor[1].v[i] = curPanel.max.v[i];
+						first = false;
 					}
 					else {
 						coor[0] = new Coordinate(coor[0]);
@@ -334,7 +356,7 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		for (HashMap<Coordinate, List<Panel>> panelsAt : panelsByPlaneAndPosition.values()) {			
 			for (Entry<Coordinate,List<Panel>> entry : panelsAt.entrySet()) {
 				for (Panel panel : entry.getValue()) {
-					if (panel.type == PanelType.STAM && entry.getKey().v[panel.widthAxis()] == panel.min.v[panel.widthAxis()]) {
+					if (panel.type == PanelType.SOLARWALL && entry.getKey().v[panel.widthAxis()] == panel.min.v[panel.widthAxis()]) {
 						nrOfOmegaProfiles.put(panel.size.width, nrOfOmegaProfiles.containsKey(panel.size.width) ? nrOfOmegaProfiles.get(panel.size.width) + 1 : 1);
 						nrOfM8HammerBolts += 8;
 						nrOfNuts += 8;
@@ -362,62 +384,96 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		sb.append("Nr of Nuts:\t" + nrOfNuts + "\n");
 		sb.append("Nr of Washers:\t" + nrOfWashers + "\n");
 		sb.append("\n");
+		sb.append("\n");
 		
-		if (!nrOfUlmaPanels.isEmpty()) {
+		if (!nrOfUlmaPanels.isEmpty() || !nrOfUlmaPVPanels.isEmpty()) {
 		//ulma parts
 			sb.append("Ulma elements\n");
 			sb.append("-------------------------------------------\n");
 			sb.append("Nr of Ulma panels (per width x height):\n");
-			for (Entry<PanelSize, Integer> entry : nrOfUlmaPanels.entrySet()) {
-				sb.append(" *" + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
-				totalUlmaSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+			if (!nrOfUlmaPanels.isEmpty()) {
+				for (Entry<PanelSize, Integer> entry : nrOfUlmaPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalUlmaSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
 			}
-			totalCost += totalUlmaSurface * 180;
-			sb.append("Total surface Ulma panels:\t" + String.format("%.2f", totalUlmaSurface) + "\n");
+			if (!nrOfUlmaPVPanels.isEmpty()) {
+				sb.append("With PV:\n");
+				for (Entry<PanelSize, Integer> entry : nrOfUlmaPVPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalUlmaSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
+			}
 			sb.append("Nr of UlmaConnectors:\t" + nrOfUlmaConnectors + "\n");		
 			sb.append("Nr of L70s:\t" + nrOfL70s + "\n");
 			sb.append("Nr of Bars:\t" + nrOfBars + "\n");
 			sb.append("Nr of Ulma Horizontal rails (per length):\n");
 			for (Entry<Integer, Integer> rail : nrOfUlmaHorizRail.entrySet())
 				sb.append("  * " + rail.getKey() * 0.01 + ":\t" + rail.getValue() + "\n");
-			sb.append("Ulma part cost:" + String.format("%.2f", totalUlmaSurface * 180)  + "\n");		
+			sb.append("Total surface Ulma panels:\t" + String.format("%.2f", totalUlmaSurface) + " m2\n");
+			sb.append("-------------------------------------------\n");		
+			sb.append("Ulma part cost: " + String.format("%.2f", UlmaCost)  + " euro\n");		
+			sb.append("-------------------------------------------\n");		
+			sb.append("\n");
 			sb.append("\n");
 		}
 		
 		//Stam parts
-		if (!nrOfStamPanels.isEmpty()) {
+		if (!nrOfStamPanels.isEmpty() || !nrOfStamPVPanels.isEmpty()) {
 			sb.append("Stam elements\n");
 			sb.append("-------------------------------------------\n");		
 			sb.append("Nr of Stam panels (per width x height):\n");
-			for (Entry<PanelSize, Integer> panel : nrOfStamPanels.entrySet()) {
-				sb.append("  * " + panel.getKey().width * 0.01 + " x " + panel.getKey().height * 0.01 + ":\t" + panel.getValue() + "\n");
-				totalStamSurface += panel.getKey().width * 0.00001 * panel.getKey().height * 0.00001 * panel.getValue();
+			if (!nrOfStamPanels.isEmpty()) {
+				for (Entry<PanelSize, Integer> entry : nrOfStamPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalStamSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
 			}
-			totalCost += totalStamSurface * 226;
-			sb.append("Total surface Stam panels:\t" + String.format("%.2f", totalStamSurface) +  "\n");
+			if (!nrOfStamPVPanels.isEmpty()) {
+				sb.append("With PV:\n");
+				for (Entry<PanelSize, Integer> entry : nrOfStamPVPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalStamSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
+			}
 			sb.append("Nr of StamAnchers (per length):\n");
 			for (Entry<Integer, Integer> anchor : nrOfStamAnchors.entrySet())
-				sb.append("  * " + anchor.getKey() + ":\t" + anchor.getValue() + "\n");
+				sb.append("  * " + anchor.getKey() * 0.01 + ":\t" + anchor.getValue() + "\n");
 			sb.append("Nr of L90s:\t" + nrOfL90s + "\n");
-			sb.append("Stam part cost:" + String.format("%.2f", totalStamSurface * 226)  + "\n");		
+			sb.append("Total surface Stam panels:\t" + String.format("%.2f", totalStamSurface) +  " m2\n");
+			sb.append("-------------------------------------------\n");		
+			sb.append("Stam part cost: " + String.format("%.2f", StamCost)  + " euro\n");		
+			sb.append("-------------------------------------------\n");		
+			sb.append("\n");
 			sb.append("\n");
 		}
 		
 		//Solarwall parts
-		if (!nrOfStamPanels.isEmpty()) {
+		if (!nrOfSolarPanels.isEmpty() || !nrOfSolarPVPanels.isEmpty()) {
 			sb.append("Solarwall elements\n");
 			sb.append("-------------------------------------------\n");		
 			sb.append("Nr of Solarwall panels (per width x height):\n");
-			for (Entry<PanelSize, Integer> panel : nrOfSolarPanels.entrySet()) {
-				sb.append("  * " + panel.getKey().width * 0.01 + " x " + panel.getKey().height * 0.01 + ":\t" + panel.getValue() + "\n");
-				totalSolarSurface += panel.getKey().width * 0.00001 * panel.getKey().height * 0.00001 * panel.getValue();
+			if (!nrOfSolarPanels.isEmpty()) {
+				for (Entry<PanelSize, Integer> entry : nrOfSolarPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalSolarSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
 			}
-			totalCost += totalSolarSurface * 351; //TODO unclear what cost value to use
-			sb.append("Total surface Solarwall panels:\t" + String.format("%.2f", totalSolarSurface) +  "\n");
+			if (!nrOfSolarPVPanels.isEmpty()) {
+				sb.append("With PV:\n");
+				for (Entry<PanelSize, Integer> entry : nrOfSolarPVPanels.entrySet()) {
+					sb.append("  * " + entry.getKey().width * 0.01 + " x " + entry.getKey().height * 0.01 + ":\t" + entry.getValue() + "\n");
+					totalSolarSurface += entry.getKey().width * 0.00001 * entry.getKey().height * 0.00001 * entry.getValue();
+				}
+			}			
 			sb.append("Nr of Omega profiles (per length):\n");
 			for (Entry<Integer, Integer> omega : nrOfOmegaProfiles.entrySet())
 				sb.append("  * " + omega.getKey() * 0.01 + ":\t" + omega.getValue() + "\n");
-			sb.append("Solarwall part cost:" + String.format("%.2f", totalSolarSurface * 351)  + "\n"); 		
+			sb.append("Total surface Solarwall panels:\t" + String.format("%.2f", totalSolarSurface) +  " m2\n");
+			sb.append("-------------------------------------------\n");		
+			sb.append("Solarwall part cost: " + String.format("%.2f", SolarwallCost)  + " euro\n"); 		
+			sb.append("-------------------------------------------\n");		
+			sb.append("\n");
 			sb.append("\n");
 		}
 		
@@ -426,19 +482,21 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			sb.append("Eurecat elements\n");
 			sb.append("-------------------------------------------\n");		
 			sb.append("Nr of Eurecat panels (per width x height):\n");
-			for (Entry<PanelSize, Integer> panel : nrOfSolarPanels.entrySet()) {
+			for (Entry<PanelSize, Integer> panel : nrOfEurecatPanels.entrySet()) {
 				sb.append("  * " + panel.getKey().width * 0.01 + " x " + panel.getKey().height * 0.01 + ":\t" + panel.getValue() + "\n");
 				totalEurecatSurface += panel.getKey().width * 0.00001 * panel.getKey().height * 0.00001 * panel.getValue();
 			}
-			totalCost += totalEurecatSurface * 446; //TODO unclear what cost value to use
-			sb.append("Total surface Eurecat panels:\t" + String.format("%.2f", totalSolarSurface) +  "\n");
-			sb.append("Eurecat part cost:" + String.format("%.2f", totalSolarSurface * 446)  + "\n"); 		
+			sb.append("Total surface Eurecat panels:\t" + String.format("%.2f", totalEurecatSurface) +  " m2\n");
+			sb.append("-------------------------------------------\n");		
+			sb.append("Eurecat part cost: " + String.format("%.2f", EurecatCost) + " euro\n"); 		
+			sb.append("-------------------------------------------\n");		
+			sb.append("\n");
 			sb.append("\n");
 		}
 		
+		sb.append("Total cost: " + String.format("%.2f", UlmaCost + StamCost + SolarwallCost + EurecatCost) + " euro\n");
 		sb.append("-------------------------------------------\n");		
-		sb.append("Total cost: " + String.format("%.2f", totalCost) + "\n");
-		sb.append("-------------------------------------------\n");		
+		sb.append("\n");
 		sb.append("\n");
 		
 		//Unknown panels
@@ -449,6 +507,8 @@ public class BimBotBresaerService extends BimBotAbstractService {
 			for (Entry<PanelSize, Integer> panel : nrOfUnknownPanels.entrySet()) {
 				sb.append("  * " + panel.getKey().width * 0.01 + " x " + panel.getKey().height * 0.01 + ":\t" + panel.getValue() + "\n");
 			}
+			sb.append("-------------------------------------------\n");		
+			sb.append("\n");
 			sb.append("\n");
 		}
 		
@@ -524,10 +584,17 @@ public class BimBotBresaerService extends BimBotAbstractService {
 		panelsByPlane.clear();
 		eurecatPanels.clear();
 		nrOfUlmaPanels.clear();		
+		nrOfUlmaPVPanels.clear();		
 		nrOfStamPanels.clear();
+		nrOfStamPVPanels.clear();
 		nrOfSolarPanels.clear();	
+		nrOfSolarPVPanels.clear();	
 		nrOfEurecatPanels.clear();	
 		nrOfUnknownPanels.clear();	
+		StamCost = 0;
+		UlmaCost = 0;
+		SolarwallCost = 0;
+		EurecatCost = 0;
 		
 		IfcModelInterface model = input.getIfcModel();
 		

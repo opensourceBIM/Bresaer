@@ -12,6 +12,17 @@ public class Panel {
 	private static final int[] StamOffset = { 4000, 4000, 7430, 2100}; //L, R, T, B
 	private static final int[] SolarWallOffset = { 4000, 4000, 5200, 5200}; //L, R, T, B
 	private static final int[] EurecatOffset = { 13500, 13500, 40200, 10000}; //L, R, T, B
+
+	private static final int UlmaCost = 104 + 76; 
+	private static final int StamCost = 104 + 122;
+	private static final int SolarWallCost = 104 + 351;
+	private static final int EurecatCost = 446;
+	
+	private static final int SolarRoofAddCost = 14; //365 - 351
+	private static final int PVUlmaAddCost = 379;
+	private static final int PVOtherAddCost = 130;
+	
+	
 	private static final int InsulationThickness = 4000;
 	private static final int PVThickness        =  6000;
 	private static final int PanelThickness     = 29000; //including 4cm of insulation
@@ -43,6 +54,7 @@ public class Panel {
 	public String 	  id;
 	public boolean    coversOpening;
 	public int[]      offset;
+	public int        cost;   
 	
 
 	public int widthAxis() {
@@ -82,7 +94,6 @@ public class Panel {
 		
 	
 	public Panel(IfcBuildingElementProxy proxy) {
-			
 		switch (proxy.getObjectType()) {
 		 // ULMA
 		case "Ulma frame_with_PV":
@@ -91,6 +102,7 @@ public class Panel {
 			type = PanelType.ULMA;
 			thickness = PanelThickness + (hasPV ? PVThickness : 0);
 			offset = UlmaOffset;
+			cost = UlmaCost + (hasPV ? PVUlmaAddCost : 0);
 			break;
 			
 		// STAM	
@@ -100,13 +112,17 @@ public class Panel {
 			type = PanelType.STAM;
 			thickness = PanelThickness + (hasPV ? PVThickness : 0);  
 			offset = StamOffset;
+			cost = StamCost + (hasPV ? PVOtherAddCost : 0);			
 			break;
 			
 		// SolarWall	
+		case "Solarwall_frame_with_PV":
+			hasPV = true;
 		case "Solarwall_frame":
 			type = PanelType.SOLARWALL;
 			thickness = PanelThickness + (hasPV ? PVThickness : 0);  
 			offset = SolarWallOffset;
+			cost = SolarWallCost + (hasPV ? PVOtherAddCost : 0);						
 			break;
 			
 		// Eurecat	
@@ -115,12 +131,14 @@ public class Panel {
 			type = PanelType.EURECAT;
 			thickness = EurecatThickness; 
 			offset = EurecatOffset;
+			cost = EurecatCost;
 			break;	
 
 		// Unknown	
 		default:
 			type = PanelType.UNKNOWN;
 			offset  = new int[]{0, 0, 0, 0};
+			cost = 0;
 			break;
 		}
 
@@ -235,12 +253,19 @@ public class Panel {
 					}
 				}
 				
+				if (type == PanelType.SOLARWALL && normalAxis == 2) //solarwall and on roof increase cost
+					cost += SolarRoofAddCost;
+				
 				min.v[upAxis] += offset[3];
 				max.v[upAxis] -= offset[2];
 				min.v[widthAxis()] += offset[0];
 				max.v[widthAxis()] -= offset[1];
 			}
 		}		
+	}
+	
+	public double GetArea()	{
+		return size.width * 0.00001 * size.height * 0.00001;
 	}
 
 	
