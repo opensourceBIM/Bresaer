@@ -541,42 +541,6 @@ public class BimBotBresaerService extends BimBotAbstractService {
 	}
 
 	
-	public String GenerateColoredJSON() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{\n");
-		sb.append("  \"name\": \"Bresaer elements with issues\"\n");
-		sb.append("	 \"changes\": [\n");
-		sb.append("    {\n");
-		sb.append("      \"selector\": {\n");
-		sb.append("        \"guids\": [\n");
-		for (HashSet<Panel> panels : panelsByPlane.values()) {
-			for (Panel panel : panels) {
-				if (panel.coversOpening)
-					sb.append("\"" + panel.id + "\"\n");
-			}
-		}	
-		for (Panel panel : eurecatPanels) {
-			if (panel.coversOpening)
-				sb.append("\"" + panel.id + "\"\n");
-		}		
-		sb.append("        ]\n");
-		sb.append("      },\n");
-		sb.append("      \"effect\": {\n");
-		sb.append("        \"color\": {\n");
-		sb.append("          \"r\": 1,\n");
-		sb.append("          \"g\": 0,\n");
-		sb.append("          \"b\": 0,\n");
-		sb.append("          \"a\": 1\n");
-		sb.append("        }\n");
-		sb.append("      }\n");
-		sb.append("    }\n");
-		sb.append("  ]\n");
-		sb.append("}\n");
-
-		return sb.toString();
-	}
-	
-	
 	@Override
 	public BimBotsOutput runBimBot(BimBotsInput input, SObjectType settings) throws BimBotsException {
 		
