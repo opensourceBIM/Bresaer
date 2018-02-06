@@ -124,7 +124,7 @@ public class VisualizeIssuesService extends BimBotAbstractService {
 	public String GenerateColoredJSON() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{\n");
-		sb.append("  \"name\": \"Bresaer elements with issues test\",\n");
+		sb.append("  \"name\": \"Bresaer elements with issues\",\n");
 		sb.append("	 \"changes\": [\n");
 		sb.append("    {\n");
 		sb.append("      \"selector\": {\n");
@@ -152,8 +152,7 @@ public class VisualizeIssuesService extends BimBotAbstractService {
 				else {
 					sb.append(",\n\"" + panel.id + "\"");
 				}
-			}		
-
+			}
 		}		
 		sb.append("        ]\n");
 		sb.append("      },\n");
